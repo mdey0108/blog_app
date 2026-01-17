@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Details - Blog App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="brand">Blog App</a>
+            <div id="nav-links" class="nav-links"></div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="post-container">
+            <div style="text-align: center;">Loading...</div>
+        </div>
+
+        <div class="comments-section">
+            <h3 style="margin-bottom: 1.5rem;">Comments</h3>
+            <div id="comments-list"></div>
+
+            <div id="comment-form-container" style="margin-top: 2rem; display: none;">
+                <h4>Add a Comment</h4>
+                <form id="comment-form">
+                    <div class="form-group">
+                        <textarea id="comment-body" class="form-input" rows="3" placeholder="Write your comment here..."
+                            required></textarea>
+                    </div>
+                    <button type="submit" class="nav-btn btn-primary">Post Comment</button>
+                </form>
+            </div>
+            <div id="login-to-comment" style="margin-top: 2rem; display: none; text-align: center;">
+                <p><a href="login.html" class="btn-primary"
+                        style="display: inline-block; padding: 0.5rem 1rem; text-decoration: none; color: white;">Login
+                        to Comment</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+
+        if (!postId) {
+            window.location.href = 'index.html';
+        }
+
+        async function loadPost() {
+            const post = await request(`/posts/${postId}`);
+
+            if (!post) {
+                document.getElementById('post-container').innerHTML = 'Post not found.';
+                return;
+            }
+
+            document.title = `${post.title} - Blog App`;
+            const initial = post.title.charAt(0).toUpperCase();
+
+            document.getElementById('post-container').innerHTML = `
+                <div class="post-card" style="cursor: default; transform: none;">
+                    <div class="post-header">
+                        <div class="post-avatar">${initial}</div>
+                        <div class="post-info">
+                            <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                                ${post.authorIsActive ? `<a href="user-profile.html?id=${post.userId}" style="text-decoration: none; color: inherit;">${post.authorName || 'Anonymous Author'}</a>` : `<span style="color: var(--text-secondary);">${post.authorName || 'Anonymous Author'} (Deactivated)</span>`}
+                                ${post.authorIsAdmin ? '<span title="Admin" style="color: var(--primary-color); display: flex;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></span>' : ''}
+                            </h3> 
+                            <span>${new Date(post.createdDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })} • ${post.categoryId ? 'Category ' + post.categoryId : 'General'}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <h1 class="post-title" style="font-size: 2rem; margin-bottom: 0;">${post.title}</h1>
+                         <button onclick="togglePostLike(${post.id})" class="like-btn ${post.liked ? 'liked' : ''}" style="display: flex; align-items: center; gap: 0.5rem; background: none; border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: 9999px; cursor: pointer; transition: all 0.2s;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="${post.liked ? '#ef4444' : 'none'}" stroke="${post.liked ? '#ef4444' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            <span style="font-weight: 500;">${post.likeCount}</span>
+                        </button>
+                    </div>
+                    <p class="post-desc">${post.description}</p>
+                    <div class="post-content" style="margin-top: 2rem; line-height: 1.8;">
+                        ${post.content.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+
+            loadComments();
+        }
+
+        async function loadComments() {
+            const comments = await request(`/posts/${postId}/comments`);
+            const commentsList = document.getElementById('comments-list');
+
+            if (!comments || comments.length === 0) {
+                commentsList.innerHTML = '<p style="color: var(--text-secondary);">No comments yet.</p>';
+            } else {
+                commentsList.innerHTML = comments.map(comment => {
+                    const isOwner = isAuthenticated() && getCurrentUserId() === comment.userId;
+                    const canDelete = isAdmin() || isOwner;
+
+                    return `
+                    <div class="comment">
+                        <div class="comment-avatar">${comment.name.charAt(0).toUpperCase()}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                    ${comment.userIsActive ? comment.name : `<span style="color: var(--text-secondary);">${comment.name} (Deactivated)</span>`}
+                                    ${comment.userIsAdmin ? '<span title="Admin" style="color: var(--primary-color); display: flex;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></span>' : ''}
+                                </span>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <button onclick="toggleCommentLike(${comment.id})" style="display: flex; align-items: center; gap: 0.25rem; background: none; border: none; cursor: pointer; color: var(--text-secondary);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="${comment.liked ? '#ef4444' : 'none'}" stroke="${comment.liked ? '#ef4444' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                        <span style="font-size: 0.8rem;">${comment.likeCount}</span>
+                                    </button>
+                                    ${canDelete ? `<button onclick="deleteComment(${comment.id})" style="color: #ef4444; border: none; background: none; cursor: pointer; font-size: 0.75rem;">Delete</button>` : ''}
+                                </div>
+                            </div>
+                            <p>${comment.body}</p>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+        }
+
+        async function togglePostLike(id) {
+            if (!isAuthenticated()) {
+                alert('Please login to like posts');
+                return;
+            }
+            const res = await request(`/posts/${id}/like`, 'POST');
+            if (res !== null) loadPost();
+        }
+
+        async function toggleCommentLike(id) {
+            if (!isAuthenticated()) {
+                alert('Please login to like comments');
+                return;
+            }
+            const res = await request(`/comments/${id}/like`, 'POST');
+            if (res !== null) loadComments();
+        }
+
+        async function deleteComment(commentId) {
+            if (!confirm('Delete this comment?')) return;
+            const res = await request(`/posts/${postId}/comments/${commentId}`, 'DELETE');
+            if (res) {
+                loadComments();
+            }
+        }
+
+        // Setup Comment Form
+        if (isAuthenticated()) {
+            document.getElementById('comment-form-container').style.display = 'block';
+        } else {
+            document.getElementById('login-to-comment').style.display = 'block';
+        }
+
+        document.getElementById('comment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const body = document.getElementById('comment-body').value;
+            const payload = { body };
+
+            const response = await request(`/posts/${postId}/comments`, 'POST', payload);
+
+            if (response) {
+                document.getElementById('comment-body').value = '';
+                loadComments();
+            }
+        });
+
+        // Initialize
+        updateNavbar();
+        loadPost();
+    </script>
+</body>
+
+</html>

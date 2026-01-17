@@ -1,0 +1,107 @@
+# Requirement Specification: Blog Writing Application
+
+## 1. Project Overview
+A RESTful API for a blog writing application built using Java Spring Boot. The system allows users to create, read, update, and delete blog posts, manage comments, and categorize specific content.
+
+## 2. Technology Stack
+- **Language**: Java 17+
+- **Framework**: Spring Boot 3.x
+- **Database**:  MySQL
+- **ORM**: Spring Data JPA (Hibernate)
+- **Security**: Spring Security + JWT (JSON Web Tokens)
+- **Build Tool**: Maven
+- **Documentation**: Swagger UI / OpenAPI
+
+## 3. Functional Requirements
+
+### 3.1 User Roles
+- **Guest**: Can view posts and comments.
+- **User (Author)**: Can register, login, create/edit/delete their own posts, and comment on posts.
+- **Admin**: Can manage all users, posts, comments, and categories.
+
+### 3.2 Core Features
+- User Registration and Authentication.
+- CRUD operations for Blog Posts.
+- commenting system for posts.
+- Categorization of posts.
+- Pagination and Sorting for post lists.
+- Search functionality (by title/content).
+
+## 4. API Endpoints Specification
+
+### 4.1 Authentication Module (`/api/auth`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/auth/register` | Register a new user (name, username, email, password) | Public |
+| POST | `/api/auth/login` | Authenticate user and return JWT token | Public |
+
+### 4.2 Category Module (`/api/categories`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/categories` | Create a new category | Admin |
+| GET | `/api/categories/{id}` | Get category by ID | Public |
+| GET | `/api/categories` | Get all categories | Public |
+| PUT | `/api/categories/{id}` | Update a category | Admin |
+| DELETE | `/api/categories/{id}` | Delete a category | Admin |
+
+### 4.3 Post Module (`/api/posts`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/posts` | Create a new blog post | User/Admin |
+| GET | `/api/posts` | Get all posts (support pagination & sorting) | Public |
+| GET | `/api/posts/{id}` | Get post by ID | Public |
+| PUT | `/api/posts/{id}` | Update a post (User owns post or Admin) | User/Admin |
+| DELETE | `/api/posts/{id}` | Delete a post | User/Admin |
+| GET | `/api/posts/category/{categoryId}` | Get posts by category | Public |
+| GET | `/api/posts/search?query=...` | Search posts by title or content | Public |
+
+### 4.4 Comment Module (`/api/posts/{postId}/comments`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/posts/{postId}/comments` | Create a comment for a post | User/Admin |
+| GET | `/api/posts/{postId}/comments` | Get all comments for a post | Public |
+| GET | `/api/posts/{postId}/comments/{id}` | Get comment by ID | Public |
+| PUT | `/api/posts/{postId}/comments/{id}` | Update a comment | User (Owner) |
+| DELETE | `/api/posts/{postId}/comments/{id}` | Delete a comment | User (Owner)/Admin |
+
+### 4.5 User Module (`/api/users`) - *Optional/Admin*
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/users` | Get all users | Admin |
+| DELETE | `/api/users/{id}` | Delete a user | Admin |
+
+## 5. Data Models (Entities)
+
+### User
+- id (Long, PK)
+- name (String)
+- username (String, Unique)
+- email (String, Unique)
+- password (String)
+- roles (Set<Role>)
+
+### Role
+- id (Long, PK)
+- name (String) (e.g., ROLE_USER, ROLE_ADMIN)
+
+### Category
+- id (Long, PK)
+- name (String)
+- description (String)
+
+### Post
+- id (Long, PK)
+- title (String)
+- description (String)
+- content (String - Large Text)
+- createdDate (DateTime)
+- updatedDate (DateTime)
+- category (Many-to-One -> Category)
+- comments (One-to-Many -> Comment)
+
+### Comment
+- id (Long, PK)
+- name (String)
+- email (String)
+- body (String)
+- post (Many-to-One -> Post)

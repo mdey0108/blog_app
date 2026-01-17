@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Blog App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="brand">BlogApp</a>
+            <div id="nav-links" class="nav-links"></div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 800px; padding-top: 2rem;">
+
+        <!-- Profile Section -->
+        <div
+            style="background: white; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+            <h2 style="margin-bottom: 1.5rem;">My Profile</h2>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="username" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="email" class="form-input" required>
+                </div>
+                <button type="submit" class="nav-btn btn-primary">Update Profile</button>
+            </form>
+        </div>
+
+        <!-- My Posts Section -->
+        <h2 style="margin-bottom: 1.5rem;">My Posts</h2>
+        <div id="my-posts-container">
+            <div style="text-align: center; color: var(--text-secondary);">Loading posts...</div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        checkAuthProtection();
+
+        async function loadProfile() {
+            const profile = await request('/users/me');
+            if (profile) {
+                document.getElementById('name').value = profile.name;
+                document.getElementById('username').value = profile.username;
+                document.getElementById('email').value = profile.email;
+                loadMyPosts(profile.id);
+            }
+        }
+
+        async function updateProfile(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+
+            const res = await request('/users/me', 'PUT', { name, username, email });
+            if (res) {
+                alert('Profile updated successfully!');
+                location.reload();
+            }
+        }
+
+        async function loadMyPosts(userId) {
+            const posts = await request(`/posts/user/${userId}`);
+            const container = document.getElementById('my-posts-container');
+
+            if (!posts || posts.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">You haven\'t created any posts yet.</p>';
+                return;
+            }
+
+            container.innerHTML = posts.map(post => `
+                <div class="post-card">
+                    <h3 class="post-title" style="font-size: 1.5rem;">
+                        <a href="post.html?id=${post.id}">${post.title}</a>
+                    </h3>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        ${new Date(post.createdDate).toLocaleDateString()}
+                    </div>
+                    <p style="color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${post.description}
+                    </p>
+                    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                         <button onclick="location.href='post.html?id=${post.id}'" class="action-btn">View</button>
+                         <button onclick="deleteMyPost(${post.id})" style="color: #ef4444; border: none; background: none; cursor: pointer;">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteMyPost(id) {
+            if (!confirm('Delete this post?')) return;
+            const res = await request(`/posts/${id}`, 'DELETE');
+            if (res) {
+                // reload just the posts
+                const userId = getCurrentUserId();
+                loadMyPosts(userId);
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', updateProfile);
+
+        updateNavbar();
+        loadProfile();
+    </script>
+</body>
+
+</html>

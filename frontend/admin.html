@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Blog App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <style>
+        .table-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: #e0e7ff;
+            color: var(--primary-color);
+        }
+
+        .badge-user {
+            background: #f1f5f9;
+            color: var(--text-secondary);
+        }
+
+        .action-btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .btn-delete {
+            color: #ef4444;
+            border-color: #fecaca;
+        }
+
+        .btn-delete:hover {
+            background: #fef2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="brand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                    <line x1="16" y1="8" x2="2" y2="22"></line>
+                    <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                </svg>
+                BlogApp <span style="font-size: 0.8em; opacity: 0.7; margin-left: 0.5rem;">Admin</span>
+            </a>
+            <div id="nav-links" class="nav-links">
+                <!-- Links will be injected by app.js -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 style="margin-bottom: 0.5rem;">User Management</h1>
+        <p style="color: var(--text-secondary);">Manage users, promote admins, and moderate content.</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Roles</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Loading users...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        checkAdminProtection();
+        updateNavbar();
+
+        async function loadUsers() {
+            const users = await request('/users');
+            const tbody = document.getElementById('users-table-body');
+
+            if (!users) return;
+
+            tbody.innerHTML = users.map(user => {
+                // Robust check for active status (handles 'active' or 'isActive')
+                const userIsActive = (user.active !== undefined) ? user.active : user.isActive;
+
+                // Check if user has ROLE_ADMIN
+                const isAdmin = user.roles.some(r => r.name === 'ROLE_ADMIN');
+                const roleBadge = isAdmin
+                    ? '<span class="badge badge-admin">ADMIN</span>'
+                    : '<span class="badge badge-user">USER</span>';
+
+                // Promote Button (only if not admin)
+                const promoteBtn = !isAdmin
+                    ? `<button class="action-btn-sm" onclick="promoteUser(${user.id})">Make Admin</button>`
+                    : '';
+
+                // Revoke Button (only if IS admin and NOT self)
+                const currentUserId = getCurrentUserId();
+                const isSelf = user.id === currentUserId;
+                const revokeBtn = isAdmin && !isSelf
+                    ? `<button class="action-btn-sm" onclick="revokeAdmin(${user.id})" style="color: #ea580c; border-color: #fdba74;">Revoke</button>`
+                    : '';
+
+                // Delete Button (don't allow deleting self ideally, but simplistic here)
+                const deleteBtn = `<button class="action-btn-sm btn-delete" onclick="deleteUser(${user.id})">Delete</button>`;
+
+                return `
+                    <tr>
+                        <td>#${user.id}</td>
+                        <td>
+                            <div style="font-weight: 500;">${user.name}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">@${user.username}</div>
+                        </td>
+                        <td>${user.email}</td>
+                        <td>
+                            ${roleBadge}
+                            ${!userIsActive ? '<span class="badge" style="background: #fee2e2; color: #ef4444; margin-left: 0.5rem;">INACTIVE</span>' : ''}
+                        </td>
+                        <td style="display: flex; gap: 0.5rem;">
+                            ${promoteBtn}
+                            ${revokeBtn}
+                            ${userIsActive ? `<button class="action-btn-sm btn-delete" onclick="deleteUser(${user.id})">Deactivate</button>` : ''}
+                            ${!userIsActive ? `<button class="action-btn-sm" style="color: green; border-color: green;" onclick="activateUser(${user.id})">Activate</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function promoteUser(id) {
+            if (!confirm('Are you sure you want to promote this user to Admin?')) return;
+
+            // Assuming successful
+            const res = await request(`/users/${id}/role`, 'PUT');
+            if (res !== null) {
+                // alert('User promoted!');
+                loadUsers();
+            }
+        }
+
+        async function revokeAdmin(id) {
+            if (!confirm('Are you sure you want to revoke Admin privileges?')) return;
+
+            const res = await request(`/users/${id}/role/revoke`, 'PUT');
+            if (res !== null) {
+                loadUsers();
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Are you sure you want to DEACTIVATE this user?')) return;
+
+            const res = await request(`/users/${id}`, 'DELETE');
+            if (res) {
+                location.reload();
+            }
+        }
+
+        async function activateUser(id) {
+            if (!confirm('Activate this user?')) return;
+            const res = await request(`/users/${id}/activate`, 'PUT');
+            if (res !== null) {
+                location.reload();
+            }
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

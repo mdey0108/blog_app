@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Post - Blog App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="brand">Blog App</a>
+            <div id="nav-links" class="nav-links"></div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="auth-container" style="max-width: 800px;">
+            <h1 class="auth-title">Create New Post</h1>
+            <form id="create-post-form">
+                <div class="form-group">
+                    <label class="form-label" for="title">Title</label>
+                    <input type="text" id="title" class="form-input" required minlength="2">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="description">Description</label>
+                    <input type="text" id="description" class="form-input" required minlength="10">
+                </div>
+                <!-- Simple Category Selection (Hardcoded for demo, normally fetched from API) -->
+                <div class="form-group">
+                    <label class="form-label" for="categoryId">Category</label>
+                    <select id="categoryId" class="form-input" required>
+                        <option value="1">Technology</option>
+                        <option value="2">Lifestyle</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="content">Content</label>
+                    <textarea id="content" class="form-input" rows="10" required></textarea>
+                </div>
+                <button type="submit" class="nav-btn btn-primary btn-block">Publish Post</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Protect Route
+        checkAuthProtection();
+        updateNavbar();
+
+        document.getElementById('create-post-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const postData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                content: document.getElementById('content').value,
+                categoryId: parseInt(document.getElementById('categoryId').value)
+            };
+
+            const response = await request('/posts', 'POST', postData);
+
+            if (response) {
+                alert('Post created successfully!');
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+
+</html>
