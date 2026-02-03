@@ -20,10 +20,13 @@ public class UserController {
 
     private UserRepository userRepository;
     private RoleRepository roleRepository;
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    public UserController(UserRepository userRepository, RoleRepository roleRepository) {
+    public UserController(UserRepository userRepository, RoleRepository roleRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -161,5 +164,40 @@ public class UserController {
         profile.setUsername(user.getUsername());
 
         return ResponseEntity.ok(profile);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/me/password")
+    public ResponseEntity<Object> changeMyPassword(@RequestBody com.blog.payload.PasswordChangeDto passwordDto) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userRepository.findByUsernameOrEmail(username, username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+
+        // Verify old password
+        if (!passwordEncoder.matches(passwordDto.getOldPassword(), user.getPassword())) {
+            return new ResponseEntity<>(Collections.singletonMap("message", "Invalid old password!"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        // Update with new password
+        user.setPassword(passwordEncoder.encode(passwordDto.getNewPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Collections.singletonMap("message", "Password changed successfully!"));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Object> resetUserPassword(@PathVariable Long id,
+            @RequestBody com.blog.payload.PasswordChangeDto passwordDto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+
+        // Admin resets password directly, no old password needed
+        user.setPassword(passwordEncoder.encode(passwordDto.getNewPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Collections.singletonMap("message", "Password reset successfully!"));
     }
 }

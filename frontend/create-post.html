@@ -41,31 +41,58 @@
                     <label class="form-label" for="content">Content</label>
                     <textarea id="content" class="form-input" rows="10" required></textarea>
                 </div>
+                <div class="form-group">
+                    <label class="form-label" for="mediaFiles">Photos / Videos</label>
+                    <input type="file" id="mediaFiles" class="form-input" multiple accept="image/*,video/*">
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Supported: JPG,
+                        PNG, MP4</p>
+                </div>
                 <button type="submit" class="nav-btn btn-primary btn-block">Publish Post</button>
             </form>
         </div>
     </div>
 
+    <footer id="main-footer"></footer>
     <script src="app.js"></script>
     <script>
         // Protect Route
         checkAuthProtection();
         updateNavbar();
+        updateFooter();
 
         document.getElementById('create-post-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const postData = {
+            const formData = new FormData();
+
+            // Create JSON Blob for the Post DTO
+            const postDto = {
                 title: document.getElementById('title').value,
                 description: document.getElementById('description').value,
                 content: document.getElementById('content').value,
                 categoryId: parseInt(document.getElementById('categoryId').value)
             };
 
-            const response = await request('/posts', 'POST', postData);
+            formData.append('postDto', new Blob([JSON.stringify(postDto)], { type: 'application/json' }));
+
+            // Append Files
+            const fileInput = document.getElementById('mediaFiles');
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Publishing...';
+
+            const response = await request('/posts', 'POST', formData);
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publish Post';
 
             if (response) {
-                alert('Post created successfully!');
+                localStorage.setItem('flashMessage', 'Post created successfully!');
+                localStorage.setItem('flashType', 'success');
                 window.location.href = 'index.html';
             }
         });

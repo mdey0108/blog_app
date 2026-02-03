@@ -53,6 +53,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/swagger-ui/**").permitAll()
                                                 .requestMatchers("/v3/api-docs/**").permitAll()
                                                 .requestMatchers("/h2-console/**").permitAll()
+                                                .requestMatchers("/uploads/**").permitAll() // Allow serving uploaded
+                                                                                            // files
                                                 .anyRequest().authenticated()
 
                                 ).headers(headers -> headers

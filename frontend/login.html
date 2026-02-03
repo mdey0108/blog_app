@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
+
 <body>
     <div class="container">
         <div class="auth-container">
@@ -32,7 +34,7 @@
     <script>
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const usernameOrEmail = document.getElementById('usernameOrEmail').value;
             const password = document.getElementById('password').value;
 
@@ -50,13 +52,14 @@
                     localStorage.setItem('accessToken', data.accessToken);
                     window.location.href = 'index.html';
                 } else {
-                    alert('Login failed: ' + (data.message || 'Invalid credentials'));
+                    showToast('Login failed: ' + (data.message || 'Invalid credentials'), 'error');
                 }
             } catch (error) {
                 console.error(error);
-                alert('Login failed. Please try again.');
+                showToast('Login failed. Please try again.', 'error');
             }
         });
     </script>
 </body>
+
 </html>

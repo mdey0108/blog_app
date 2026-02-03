@@ -17,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "posts", uniqueConstraints = { @UniqueConstraint(columnNames = { "title" }) })
+@Table(name = "posts")
 public class Post {
 
     @Id
@@ -54,4 +54,7 @@ public class Post {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Media> media = new HashSet<>();
 }

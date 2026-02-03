@@ -26,9 +26,11 @@ public class PostController {
     // create blog post
     // @PreAuthorize("hasRole('ADMIN')") // Removed to allow all authenticated users
     // to create posts
-    @PostMapping
-    public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto) {
-        return new ResponseEntity<>(postService.createPost(postDto), HttpStatus.CREATED);
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostDto> createPost(
+            @Valid @RequestPart("postDto") PostDto postDto,
+            @RequestPart(value = "files", required = false) org.springframework.web.multipart.MultipartFile[] files) {
+        return new ResponseEntity<>(postService.createPost(postDto, files), HttpStatus.CREATED);
     }
 
     // get all posts rest api

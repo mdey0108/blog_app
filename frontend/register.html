@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
+
 <body>
     <div class="container">
         <div class="auth-container">
@@ -40,7 +42,7 @@
     <script>
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = {
                 name: document.getElementById('name').value,
                 username: document.getElementById('username').value,
@@ -56,17 +58,21 @@
                 });
 
                 if (response.ok) {
-                    alert('Registration successful! Please login.');
-                    window.location.href = 'login.html';
+                    // Start success toast and redirect after delay
+                    showToast('Registration successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
                 } else {
-                    const data = await response.text(); // Assuming backend returns string message
-                    alert('Registration failed: ' + data);
+                    const data = await response.text();
+                    showToast('Registration failed: ' + data, 'error');
                 }
             } catch (error) {
                 console.error(error);
-                alert('Registration failed. Please try again.');
+                showToast('Registration failed. Please try again.', 'error');
             }
         });
     </script>
 </body>
+
 </html>

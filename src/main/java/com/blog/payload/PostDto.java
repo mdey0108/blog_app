@@ -31,4 +31,5 @@ public class PostDto {
     private boolean authorIsAdmin;
     private boolean authorIsActive;
     private Set<CommentDto> comments;
+    private java.util.Set<MediaDto> media;
 }

@@ -28,16 +28,21 @@ public class PostServiceImpl implements PostService {
     private PostRepository postRepository;
     private CategoryRepository categoryRepository;
     private UserRepository userRepository;
+    private com.blog.repository.MediaRepository mediaRepository;
+    private com.blog.service.FileService fileService;
 
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository, com.blog.repository.MediaRepository mediaRepository,
+            com.blog.service.FileService fileService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.mediaRepository = mediaRepository;
+        this.fileService = fileService;
     }
 
     @Override
-    public PostDto createPost(PostDto postDto) {
+    public PostDto createPost(PostDto postDto, org.springframework.web.multipart.MultipartFile[] files) {
         Category category = categoryRepository.findById(postDto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", postDto.getCategoryId()));
 
@@ -50,9 +55,36 @@ public class PostServiceImpl implements PostService {
         Post post = mapToEntity(postDto);
         post.setCategory(category);
         post.setUser(user);
-        Post newPost = postRepository.save(post);
 
-        return mapToDTO(newPost);
+        // Save Post first to get ID
+        Post savedPost = postRepository.save(post);
+
+        // Process Files
+        if (files != null && files.length > 0) {
+            java.util.Set<com.blog.entity.Media> mediaSet = new java.util.HashSet<>();
+            for (org.springframework.web.multipart.MultipartFile file : files) {
+                try {
+                    String filename = fileService.uploadFile(file);
+                    com.blog.entity.Media media = new com.blog.entity.Media();
+                    // Store full URL basically. Assuming hosted at /uploads/
+                    media.setFileUrl("/uploads/" + filename);
+                    media.setContentType(file.getContentType());
+                    media.setPost(savedPost);
+                    mediaSet.add(media);
+                    // We can save media indepedently or cascade.
+                    // Since it's bidirectional and we used mappedBy, we should add to post and save
+                    // post?
+                    // OR save media directly since we set the post.
+                    mediaRepository.save(media);
+                } catch (java.io.IOException e) {
+                    throw new RuntimeException("Error occurred while uploading file: " + e.getMessage());
+                }
+            }
+            // If we want the response to include the media immediately without re-fetching
+            savedPost.setMedia(mediaSet);
+        }
+
+        return mapToDTO(savedPost);
     }
 
     @Override
@@ -136,7 +168,7 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        List<Post> posts = postRepository.findByUserId(userId);
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedDateDesc(userId);
 
         return posts.stream().map((post) -> mapToDTO(post)).collect(Collectors.toList());
     }
@@ -176,6 +208,16 @@ public class PostServiceImpl implements PostService {
             boolean isAdmin = post.getUser().getRoles().stream().anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
             postDto.setAuthorIsAdmin(isAdmin);
             postDto.setAuthorIsActive(post.getUser().isActive());
+        }
+
+        if (post.getMedia() != null) {
+            postDto.setMedia(post.getMedia().stream().map(media -> {
+                com.blog.payload.MediaDto mediaDto = new com.blog.payload.MediaDto();
+                mediaDto.setId(media.getId());
+                mediaDto.setFileUrl(media.getFileUrl());
+                mediaDto.setContentType(media.getContentType());
+                return mediaDto;
+            }).collect(Collectors.toSet()));
         }
 
         return postDto;

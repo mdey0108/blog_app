@@ -6,7 +6,7 @@ import com.blog.payload.PostResponse;
 import java.util.List;
 
 public interface PostService {
-    PostDto createPost(PostDto postDto);
+    PostDto createPost(PostDto postDto, org.springframework.web.multipart.MultipartFile[] files);
 
     PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir);
 

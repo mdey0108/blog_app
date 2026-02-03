@@ -73,6 +73,64 @@
         .btn-delete:hover {
             background: #fef2f2;
         }
+
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-family: inherit;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Dashboard Banner */
+        .dashboard-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #4338ca 100%);
+            color: white;
+            padding: 2.5rem 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .dashboard-banner h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .dashboard-banner p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 
@@ -95,8 +153,10 @@
     </nav>
 
     <div class="container">
-        <h1 style="margin-bottom: 0.5rem;">User Management</h1>
-        <p style="color: var(--text-secondary);">Manage users, promote admins, and moderate content.</p>
+        <div class="dashboard-banner">
+            <h1>Admin Dashboard</h1>
+            <p>Manage users, promote admins, and moderate content.</p>
+        </div>
 
         <div class="table-container">
             <table>
@@ -116,8 +176,26 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Reset Password Modal -->
+        <div id="reset-modal" class="modal-overlay">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal('reset-modal')">&times;</button>
+                <h2 style="margin-bottom: 1.5rem;">Reset Password</h2>
+                <form id="reset-form" onsubmit="handleResetSubmit(event)">
+                    <input type="hidden" id="reset-user-id">
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="new-password" class="form-input" placeholder="Enter new password"
+                            required>
+                    </div>
+                    <button type="submit" class="nav-btn btn-primary" style="width: 100%;">Reset Password</button>
+                </form>
+            </div>
+        </div>
     </div>
 
+    <footer id="main-footer"></footer>
     <script src="app.js"></script>
     <script>
         checkAdminProtection();
@@ -171,6 +249,7 @@
                             ${revokeBtn}
                             ${userIsActive ? `<button class="action-btn-sm btn-delete" onclick="deleteUser(${user.id})">Deactivate</button>` : ''}
                             ${!userIsActive ? `<button class="action-btn-sm" style="color: green; border-color: green;" onclick="activateUser(${user.id})">Activate</button>` : ''}
+                            <button class="action-btn-sm" style="color: #6366f1; border-color: #818cf8;" onclick="resetPassword(${user.id})">Reset Pwd</button>
                         </td>
                     </tr>
                 `;
@@ -178,39 +257,80 @@
         }
 
         async function promoteUser(id) {
-            if (!confirm('Are you sure you want to promote this user to Admin?')) return;
+            const confirmed = await showConfirm('Are you sure you want to promote this user to Admin?', 'Promote User');
+            if (!confirmed) return;
 
-            // Assuming successful
             const res = await request(`/users/${id}/role`, 'PUT');
             if (res !== null) {
-                // alert('User promoted!');
+                showToast('User promoted to Admin', 'success');
                 loadUsers();
             }
         }
 
         async function revokeAdmin(id) {
-            if (!confirm('Are you sure you want to revoke Admin privileges?')) return;
+            const confirmed = await showConfirm('Are you sure you want to revoke Admin privileges?', 'Revoke Admin');
+            if (!confirmed) return;
 
             const res = await request(`/users/${id}/role/revoke`, 'PUT');
             if (res !== null) {
+                showToast('Admin privileges revoked', 'success');
                 loadUsers();
             }
         }
 
         async function deleteUser(id) {
-            if (!confirm('Are you sure you want to DEACTIVATE this user?')) return;
+            const confirmed = await showConfirm('Are you sure you want to DEACTIVATE this user?', 'Deactivate User');
+            if (!confirmed) return;
 
             const res = await request(`/users/${id}`, 'DELETE');
             if (res) {
-                location.reload();
+                showToast('User deactivated', 'success');
+                loadUsers(); // Better than reload because it keeps UI state
             }
         }
 
         async function activateUser(id) {
-            if (!confirm('Activate this user?')) return;
+            const confirmed = await showConfirm('Activate this user?', 'Activate User');
+            if (!confirmed) return;
+
             const res = await request(`/users/${id}/activate`, 'PUT');
             if (res !== null) {
-                location.reload();
+                showToast('User activated', 'success');
+                loadUsers();
+            }
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.add('open');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.classList.remove('open');
+            }
+        }
+
+        function resetPassword(userId) {
+            document.getElementById('reset-user-id').value = userId;
+            document.getElementById('new-password').value = '';
+            openModal('reset-modal');
+        }
+
+        async function handleResetSubmit(e) {
+            e.preventDefault();
+            const userId = document.getElementById('reset-user-id').value;
+            const newPassword = document.getElementById('new-password').value;
+
+            const res = await request(`/users/${userId}/password`, 'PUT', { newPassword });
+
+            if (res) {
+                showToast('Password reset successfully!', 'success');
+                closeModal('reset-modal');
             }
         }
 
