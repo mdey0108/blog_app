@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 @org.springframework.transaction.annotation.Transactional
 public class CommentServiceImpl implements CommentService {
 
-    private CommentRepository commentRepository;
-    private PostRepository postRepository;
-    private UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
     public CommentServiceImpl(CommentRepository commentRepository, PostRepository postRepository,
             UserRepository userRepository) {

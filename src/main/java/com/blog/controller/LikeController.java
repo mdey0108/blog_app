@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.*;
 @org.springframework.transaction.annotation.Transactional
 public class LikeController {
 
-    private PostRepository postRepository;
-    private CommentRepository commentRepository;
-    private UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     public LikeController(PostRepository postRepository, CommentRepository commentRepository,
             UserRepository userRepository) {

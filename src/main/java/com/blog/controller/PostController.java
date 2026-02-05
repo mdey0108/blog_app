@@ -17,7 +17,7 @@ import java.util.List;
 @CrossOrigin("*")
 public class PostController {
 
-    private PostService postService;
+    private final PostService postService;
 
     public PostController(PostService postService) {
         this.postService = postService;

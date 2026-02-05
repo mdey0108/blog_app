@@ -24,6 +24,7 @@ public class PostDto {
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
     private Long categoryId;
+    private String categoryName;
     private String authorName;
     private Long userId;
     private int likeCount;

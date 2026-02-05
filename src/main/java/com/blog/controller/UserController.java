@@ -18,9 +18,9 @@ import java.util.List;
 @CrossOrigin("*")
 public class UserController {
 
-    private UserRepository userRepository;
-    private RoleRepository roleRepository;
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public UserController(UserRepository userRepository, RoleRepository roleRepository,
             org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {

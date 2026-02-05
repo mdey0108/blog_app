@@ -21,19 +21,22 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.blog.repository.MediaRepository;
+import com.blog.service.FileService;
+
 @Service
 @org.springframework.transaction.annotation.Transactional
 public class PostServiceImpl implements PostService {
 
-    private PostRepository postRepository;
-    private CategoryRepository categoryRepository;
-    private UserRepository userRepository;
-    private com.blog.repository.MediaRepository mediaRepository;
-    private com.blog.service.FileService fileService;
+    private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+    private final MediaRepository mediaRepository;
+    private final FileService fileService;
 
     public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository,
-            UserRepository userRepository, com.blog.repository.MediaRepository mediaRepository,
-            com.blog.service.FileService fileService) {
+            UserRepository userRepository, MediaRepository mediaRepository,
+            FileService fileService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
@@ -184,6 +187,7 @@ public class PostServiceImpl implements PostService {
         postDto.setUpdatedDate(post.getUpdatedDate());
         if (post.getCategory() != null) {
             postDto.setCategoryId(post.getCategory().getId());
+            postDto.setCategoryName(post.getCategory().getName());
         }
         if (post.getUser() != null) {
             postDto.setAuthorName(post.getUser().getUsername());

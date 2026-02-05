@@ -13,7 +13,7 @@ import java.util.List;
 @RequestMapping("/api/categories")
 public class CategoryController {
 
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
@@ -22,21 +22,21 @@ public class CategoryController {
     // Build Add Category REST API
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<CategoryDto> addCategory(@RequestBody CategoryDto categoryDto){
+    public ResponseEntity<CategoryDto> addCategory(@RequestBody CategoryDto categoryDto) {
         CategoryDto savedCategory = categoryService.addCategory(categoryDto);
         return new ResponseEntity<>(savedCategory, HttpStatus.CREATED);
     }
 
     // Build Get Category REST API
     @GetMapping("{id}")
-    public ResponseEntity<CategoryDto> getCategory(@PathVariable("id") Long categoryId){
+    public ResponseEntity<CategoryDto> getCategory(@PathVariable("id") Long categoryId) {
         CategoryDto categoryDto = categoryService.getCategory(categoryId);
         return ResponseEntity.ok(categoryDto);
     }
 
     // Build Get All Categories REST API
     @GetMapping
-    public ResponseEntity<List<CategoryDto>> getCategories(){
+    public ResponseEntity<List<CategoryDto>> getCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
@@ -44,14 +44,14 @@ public class CategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("{id}")
     public ResponseEntity<CategoryDto> updateCategory(@RequestBody CategoryDto categoryDto,
-                                                      @PathVariable("id") Long categoryId){
+            @PathVariable("id") Long categoryId) {
         return ResponseEntity.ok(categoryService.updateCategory(categoryDto, categoryId));
     }
 
     // Build Delete Category REST API
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("{id}")
-    public ResponseEntity<String> deleteCategory(@PathVariable("id") Long categoryId){
+    public ResponseEntity<String> deleteCategory(@PathVariable("id") Long categoryId) {
         categoryService.deleteCategory(categoryId);
         return ResponseEntity.ok("Category deleted successfully!.");
     }

@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 
+import com.blog.repository.UserRepository;
+import com.blog.entity.User;
+
 @Component
 public class JwtTokenProvider {
 
@@ -21,9 +24,9 @@ public class JwtTokenProvider {
     @Value("${app.jwt-expiration-milliseconds}")
     private long jwtExpirationDate;
 
-    private com.blog.repository.UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    public JwtTokenProvider(com.blog.repository.UserRepository userRepository) {
+    public JwtTokenProvider(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -33,7 +36,7 @@ public class JwtTokenProvider {
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 
-        com.blog.entity.User user = userRepository.findByUsernameOrEmail(username, username).orElseThrow();
+        User user = userRepository.findByUsernameOrEmail(username, username).orElseThrow();
 
         // Prioritize ROLE_ADMIN if the user has it
         String role = user.getRoles().stream()

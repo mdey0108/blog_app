@@ -22,8 +22,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @SecurityScheme(name = "Bear Authentication", type = SecuritySchemeType.HTTP, bearerFormat = "JWT", scheme = "bearer")
 public class SecurityConfig {
 
-        private JwtAuthenticationEntryPoint authenticationEntryPoint;
-        private JwtAuthenticationFilter authenticationFilter;
+        private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+        private final JwtAuthenticationFilter authenticationFilter;
 
         public SecurityConfig(JwtAuthenticationEntryPoint authenticationEntryPoint,
                         JwtAuthenticationFilter authenticationFilter) {
